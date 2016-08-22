@@ -1,0 +1,4 @@
+**/*.spec.js
+**/*.integration.js
+mocha.conf.js
+**/config/seed.js
