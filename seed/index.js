@@ -11,24 +11,34 @@ const feeds = [
   'http://podcasts.cstv.com/feeds/nba.xml',
 ];
 
+const seedEpisodes = function seedEpisodes({ station, episodes }) {
+  logger.info(`Creating ${episodes.length} podcasts for ${station.title}...`);
+  return episodes.reduce((p, c) => p.then(() => Podcast.create(c)), Promise.resolve());
+};
+
 const seedStation = function seedStation(feed) {
-  let update;
-  return () => utils.fetch(feed)
-    .then(parsed => (update = parsed))
-    .then(() => Station.create(Object.assign(update.station, { feed })))
+  return parsed => Station.create(Object.assign(parsed.station, { feed }))
     .then(station => {
-      const newEpisodes = update.episodes.map(podcast => Object.assign(podcast, { station }));
-      logger.info(`Creating ${newEpisodes.length} podcasts for ${station.title}...`);
-      return newEpisodes.reduce((p, c) => p.then(() => Podcast.create(c)), Promise.resolve());
-    })
-    .catch(error => {
-      logger.error(error, error.stack);
-      throw error;
+      logger.info(`Creating station: ${station.title}`);
+      const episodes = parsed.episodes
+        .map(podcast => Object.assign(podcast, { station }))
+        .map(podcast => Object.assign(podcast, { image: podcast.image || station.image }));
+      return {
+        station,
+        episodes,
+      };
     });
 };
 
 const seed = function seed() {
-  return feeds.reduce((p, c) => p.then(seedStation(c)), Promise.resolve([]));
+  return feeds.reduce((p, feed) => p
+    .then(() => utils.fetch(feed))
+    .then(seedStation(feed))
+    .then(seedEpisodes), Promise.resolve([]))
+    .catch(error => {
+      logger.error(error, error.stack);
+      throw error;
+    });
 };
 
 const clean = function clean() {
