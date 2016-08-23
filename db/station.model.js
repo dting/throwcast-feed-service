@@ -7,7 +7,7 @@ const stationSchema = new mongoose.Schema({
   description: {},
   updated: Date,
   categories: {},
-  feed: { type: String, required: true },
+  feed: { type: String, required: true, unique: true },
 }, {
   timestamps: true,
 });

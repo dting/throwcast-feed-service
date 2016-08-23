@@ -1,42 +1,31 @@
 const logger = require('winston');
 const _ = require('lodash');
-const utils = require('../utils');
-const { Station, Podcast } = require('../db');
 
-const applyStationUpdate = function applyStationUpdate(station) {
-  return parsedUpdate => {
-    if (station.updated.valueOf() === parsedUpdate.station.updated.valueOf()) {
-      return parsedUpdate.episodes;
+const utils = require('../utils');
+const { Station } = require('../db');
+
+const updateStation = function updateStation(doc) {
+  return ({ station, episodes }) => {
+    if (doc.updated.valueOf() === station.updated.valueOf()) {
+      logger.debug(`No station changes for: ${doc.title}`);
+      return { station: doc, episodes };
     }
     logger.info(`Updating station: ${station.title}`);
-    _.extend(station, parsedUpdate.station);
-    return station.save().then(() => parsedUpdate.episodes);
+    _.extend(doc, station);
+    return doc.save().then(saved => ({ station: saved, episodes }));
   };
 };
 
-const createNewEpisodes = function createNewEpisodes(station) {
-  return parsedUpdateEpisodes => Podcast.find({ station: station._id })
-    .then(episodes => _.differenceBy(parsedUpdateEpisodes, episodes, 'guid')
-      .map(newEpisode => Object.assign(newEpisode, { station })))
-    .then(newEpisodes => {
-      if (newEpisodes.length) {
-        logger.info(`Creating ${newEpisodes.length} podcasts for ${station.title}...`);
-        return Podcast.create(newEpisodes);
-      }
-      return null;
-    });
-};
-
-const updateStation = function updateStation(station) {
-  return () => utils.fetch(station.feed)
-    .then(applyStationUpdate(station))
-    .then(createNewEpisodes(station))
-    .catch(logger.error);
+const stationHandler = function stationHandler(p, station) {
+  return p.then(() => utils.fetch(station.feed))
+    .then(updateStation(station))
+    .then(utils.updateEpisodes);
 };
 
 const update = function update() {
   return Station.find({})
-    .then(stations => stations.reduce((p, c) => p.then(updateStation(c)), Promise.resolve()));
+    .then(stations => stations.reduce(stationHandler, Promise.resolve()))
+    .catch(logger.error);
 };
 
 module.exports = { update };
