@@ -1,5 +1,5 @@
 const logger = require('winston');
-const utils = require('./utils');
+const utils = require('../utils');
 const { connect, connection, Station, Podcast } = require('../db');
 
 const feeds = [
@@ -15,10 +15,12 @@ const seedStation = function seedStation(feed) {
   let update;
   return () => utils.fetch(feed)
     .then(parsed => (update = parsed))
-    .then(() => Station.create(Object.assing(update.station, { feed })))
-    .then(station => update.episodes.reduce((p, c) => p
-        .then(() => Podcast.create(Object.assign(c, { station: station._id })))
-      , Promise.resolve()))
+    .then(() => Station.create(Object.assign(update.station, { feed })))
+    .then(station => {
+      const newEpisodes = update.episodes.map(podcast => Object.assign(podcast, { station }));
+      logger.info(`Creating ${newEpisodes.length} podcasts for ${station.title}...`);
+      return newEpisodes.reduce((p, c) => p.then(() => Podcast.create(c)), Promise.resolve());
+    })
     .catch(error => {
       logger.error(error, error.stack);
       throw error;
@@ -34,14 +36,9 @@ const clean = function clean() {
 };
 
 connect()
-  .then(() => {
-    if (process.argv.slice(2).indexOf('clean') === -1) {
-      return null;
-    }
-    logger.info('Cleaning DB before seeding');
-    return clean();
-  })
-  .then(() => seed())
+  .then(() => logger.info('Cleaning DB before seeding'))
+  .then(clean)
+  .then(seed)
   .then(() => connection.close());
 
 module.exports = { seed, clean };
