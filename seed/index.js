@@ -1,7 +1,7 @@
 const logger = require('winston');
 
 const utils = require('../utils');
-const { connect, connection, Station, Podcast } = require('../db');
+const { connect, connection, Station } = require('../db');
 
 const feeds = [
   'http://feeds.themoth.org/themothpodcast',
@@ -10,41 +10,55 @@ const feeds = [
   'http://www.bloomberg.com/feeds/podcasts/masters_in_business.xml',
   'http://podcasts.cstv.com/feeds/fantasyfootball.xml',
   'http://podcasts.cstv.com/feeds/nba.xml',
+  'http://feeds.feedburner.com/99pi',
 ];
 
-const seedStation = function seedStation({ station, episodes }) {
-  logger.info(`Created station: ${station.title}`);
-  return Station.create(station).then(created => ({ station: created, episodes }));
+const opts = {
+  upsert: true,
+  new: true,
+  runValidators: true,
+  setDefaultsOnInsert: true,
+  passRawResult: true,
 };
 
-const seedEpisodes = function seedEpisodes({ station, episodes }) {
-  const podcasts = episodes.map(podcast => {
-    const props = { station, image: podcast.image || station.image };
-    return Object.assign(podcast, props);
+const upsertStation = function upsertStation({ station, episodes }) {
+  return new Promise((resolve, reject) => {
+    Station.findOneAndUpdate({ feed: station.feed }, station, opts, (err, doc, raw) => {
+      if (err) {
+        return reject(err);
+      }
+      if (!raw.lastErrorObject.updatedExisting) {
+        logger.info(`Station created: ${station.title}`);
+      } else {
+        logger.debug(`Station updated: ${station.title}`);
+      }
+      return resolve({ station: doc, episodes });
+    });
   });
-  logger.info(`Creating ${podcasts.length} podcasts for ${station.title}...`);
-  return Podcast.create(podcasts);
 };
 
-const feedHandler = function(p, feed) {
+const feedHandler = function feedHandler(p, feed) {
   return p.then(() => utils.fetch(feed))
-    .then(seedStation)
-    .then(seedEpisodes);
+    .then(upsertStation)
+    .then(utils.updateEpisodes);
 };
 
 const seed = function seed() {
+  logger.info('Seeding db started...');
   return feeds.reduce(feedHandler, Promise.resolve())
+    .then(() => logger.info('Seeding db completed...'))
     .catch(logger.error);
 };
 
-const clean = function clean() {
-  return Station.remove().then(() => Podcast.remove());
-};
-
 connect()
-  .then(() => logger.info('Cleaning DB before seeding'))
-  .then(clean)
+  .then(() => {
+    if (process.argv.slice(2).indexOf('clean') !== -1) {
+      logger.info('Cleaning DB before seeding');
+      return utils.clean();
+    }
+    return null;
+  })
   .then(seed)
   .then(() => connection.close());
 
-module.exports = { seed, clean };
+module.exports = { seed };
