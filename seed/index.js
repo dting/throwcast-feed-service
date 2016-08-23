@@ -1,4 +1,5 @@
 const logger = require('winston');
+
 const utils = require('../utils');
 const { connect, connection, Station, Podcast } = require('../db');
 
@@ -11,34 +12,29 @@ const feeds = [
   'http://podcasts.cstv.com/feeds/nba.xml',
 ];
 
-const seedEpisodes = function seedEpisodes({ station, episodes }) {
-  logger.info(`Creating ${episodes.length} podcasts for ${station.title}...`);
-  return episodes.reduce((p, c) => p.then(() => Podcast.create(c)), Promise.resolve());
+const seedStation = function seedStation({ station, episodes }) {
+  logger.info(`Created station: ${station.title}`);
+  return Station.create(station).then(created => ({ station: created, episodes }));
 };
 
-const seedStation = function seedStation(feed) {
-  return parsed => Station.create(Object.assign(parsed.station, { feed }))
-    .then(station => {
-      logger.info(`Creating station: ${station.title}`);
-      const episodes = parsed.episodes
-        .map(podcast => Object.assign(podcast, { station }))
-        .map(podcast => Object.assign(podcast, { image: podcast.image || station.image }));
-      return {
-        station,
-        episodes,
-      };
-    });
+const seedEpisodes = function seedEpisodes({ station, episodes }) {
+  const podcasts = episodes.map(podcast => {
+    const props = { station, image: podcast.image || station.image };
+    return Object.assign(podcast, props);
+  });
+  logger.info(`Creating ${podcasts.length} podcasts for ${station.title}...`);
+  return Podcast.create(podcasts);
+};
+
+const feedHandler = function(p, feed) {
+  return p.then(() => utils.fetch(feed))
+    .then(seedStation)
+    .then(seedEpisodes);
 };
 
 const seed = function seed() {
-  return feeds.reduce((p, feed) => p
-    .then(() => utils.fetch(feed))
-    .then(seedStation(feed))
-    .then(seedEpisodes), Promise.resolve([]))
-    .catch(error => {
-      logger.error(error, error.stack);
-      throw error;
-    });
+  return feeds.reduce(feedHandler, Promise.resolve())
+    .catch(logger.error);
 };
 
 const clean = function clean() {
