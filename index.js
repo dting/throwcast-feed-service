@@ -1,6 +1,6 @@
-const db = require('./db');
 const logger = require('winston');
 const CronJob = require('cron').CronJob;
+const db = require('./db');
 const feed = require('./feed');
 
 const CRON_TIME = '0 */1 * * * *';
@@ -14,11 +14,11 @@ db.connect()
     cronTime: CRON_TIME,
     onTick: () => {
       logger.info('Updates started:', Date.now());
-      feed.updater.update().then(() => {
+      feed.update().then(() => {
         logger.info('Updates complete:', Date.now());
       });
     },
-    start: false,
+    start: true,
     runOnInit: true,
     timeZone: 'America/Los_Angeles',
   }))
