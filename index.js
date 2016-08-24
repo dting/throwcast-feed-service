@@ -2,19 +2,29 @@ const logger = require('winston');
 const CronJob = require('cron').CronJob;
 const db = require('./db');
 const feed = require('./feed');
+const seed = require('./seed');
+const utils = require('./utils');
 
-const CRON_TIME = '0 */1 * * * *';
+const CRON_TIME = '0 */15 * * * *';
 
 db.connect()
   .then(() => {
     logger.info('Mongoose connection established...');
     logger.info(`${CRON_TIME} CronJob starting to update feeds...`);
   })
+  .then(() => {
+    if (process.argv.slice(2).indexOf('clean') !== -1) {
+      logger.info('Cleaning DB before seeding');
+      return utils.clean();
+    }
+    return null;
+  })
+  .then(seed)
   .then(() => new CronJob({
     cronTime: CRON_TIME,
     onTick: () => {
       logger.info('Updates started:', Date.now());
-      feed.update().then(() => {
+      feed().then(() => {
         logger.info('Updates complete:', Date.now());
       });
     },

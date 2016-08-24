@@ -6,8 +6,6 @@
   "scripts": {
     "start": "node index.js",
     "lint": "eslint . --ext .js; exit 0",
-    "seed": "node ./seed/index.js",
-    "seed:clean": "node ./seed/index.js clean",
     "dev": "nodemon index.js"
   },
   "author": "",

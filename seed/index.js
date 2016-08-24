@@ -2,7 +2,7 @@ const logger = require('winston');
 const Promise = require('bluebird');
 
 const utils = require('../utils');
-const { connect, connection, Playlist, Podcast, Station } = require('../db');
+const { Playlist, Podcast, Station } = require('../db');
 
 const feeds = [
   'http://feeds.themoth.org/themothpodcast',
@@ -44,25 +44,12 @@ const feedHandler = function feedHandler(p, feed) {
     .then(utils.updateEpisodes);
 };
 
-const seed = function seed() {
+module.exports = function seed() {
   logger.info('Seeding db started...');
   return feeds.reduce(feedHandler, Promise.resolve())
+    .then(utils.sync(Playlist, 'Playlists'))
+    .then(utils.sync(Podcast, 'Podcasts'))
+    .then(utils.sync(Station, 'Stations'))
     .then(() => logger.info('Seeding db completed...'))
     .catch(logger.error);
 };
-
-connect()
-  .then(() => {
-    if (process.argv.slice(2).indexOf('clean') !== -1) {
-      logger.info('Cleaning DB before seeding');
-      return utils.clean();
-    }
-    return null;
-  })
-  .then(seed)
-  .then(utils.syncronize(Playlist, 'Playlists'))
-  .then(utils.syncronize(Podcast, 'Podcasts'))
-  .then(utils.syncronize(Station, 'Stations'))
-  .then(() => connection.close());
-
-module.exports = { seed };

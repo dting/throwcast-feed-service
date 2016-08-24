@@ -62,7 +62,7 @@ const updateEpisodes = function updateEpisodes({ station, episodes }) {
     });
 };
 
-const syncronize = function syncronize(model, name) {
+const sync = function sync(model, name) {
   return () => new Promise((resolve, reject) => {
     let count = 0;
     const stream = model.synchronize();
@@ -80,8 +80,7 @@ const syncronize = function syncronize(model, name) {
 };
 
 const clean = function clean() {
-  return Station.remove()
-    .then(() => Podcast.remove());
+  return Station.remove().then(() => Podcast.remove());
 };
 
-module.exports = { clean, fetch, syncronize, updateEpisodes };
+module.exports = { clean, fetch, sync, updateEpisodes };
