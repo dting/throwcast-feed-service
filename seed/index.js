@@ -1,7 +1,8 @@
 const logger = require('winston');
+const Promise = require('bluebird');
 
 const utils = require('../utils');
-const { connect, connection, Station } = require('../db');
+const { connect, connection, Playlist, Podcast, Station } = require('../db');
 
 const feeds = [
   'http://feeds.themoth.org/themothpodcast',
@@ -59,6 +60,9 @@ connect()
     return null;
   })
   .then(seed)
+  .then(utils.syncronize(Playlist, 'Playlists'))
+  .then(utils.syncronize(Podcast, 'Podcasts'))
+  .then(utils.syncronize(Station, 'Stations'))
   .then(() => connection.close());
 
 module.exports = { seed };
