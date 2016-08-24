@@ -10,7 +10,7 @@ const feeds = [
   'http://www.bloomberg.com/feeds/podcasts/masters_in_business.xml',
   'http://podcasts.cstv.com/feeds/fantasyfootball.xml',
   'http://podcasts.cstv.com/feeds/nba.xml',
-  'http://feeds.feedburner.com/99pi',
+  'http://feeds.99percentinvisible.org/99percentinvisible',
 ];
 
 const opts = {
