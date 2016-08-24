@@ -2,7 +2,7 @@ const logger = require('winston');
 const _ = require('lodash');
 
 const utils = require('../utils');
-const { Station } = require('../db');
+const { Playlist, Podcast, Station } = require('../db');
 
 const updateStation = function updateStation(doc) {
   return ({ station, episodes }) => {
@@ -25,6 +25,9 @@ const stationHandler = function stationHandler(p, station) {
 const update = function update() {
   return Station.find({})
     .then(stations => stations.reduce(stationHandler, Promise.resolve()))
+    .then(utils.syncronize(Playlist, 'Playlists'))
+    .then(utils.syncronize(Podcast, 'Podcasts'))
+    .then(utils.syncronize(Station, 'Stations'))
     .catch(logger.error);
 };
 

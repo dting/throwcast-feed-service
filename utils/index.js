@@ -62,9 +62,26 @@ const updateEpisodes = function updateEpisodes({ station, episodes }) {
     });
 };
 
+const syncronize = function syncronize(model, name) {
+  return () => new Promise((resolve, reject) => {
+    let count = 0;
+    const stream = model.synchronize();
+
+    stream.on('data', () => count++);
+    stream.on('close', () => {
+      logger.info(`indexed ${count} ${name} documents!`);
+      resolve();
+    });
+    stream.on('error', err => {
+      logger.error(err, err.stack);
+      reject(err);
+    });
+  });
+};
+
 const clean = function clean() {
   return Station.remove()
     .then(() => Podcast.remove());
 };
 
-module.exports = { clean, fetch, updateEpisodes };
+module.exports = { clean, fetch, syncronize, updateEpisodes };
