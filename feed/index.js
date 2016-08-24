@@ -22,13 +22,11 @@ const stationHandler = function stationHandler(p, station) {
     .then(utils.updateEpisodes);
 };
 
-const update = function update() {
+module.exports = function update() {
   return Station.find({})
     .then(stations => stations.reduce(stationHandler, Promise.resolve()))
-    .then(utils.syncronize(Playlist, 'Playlists'))
-    .then(utils.syncronize(Podcast, 'Podcasts'))
-    .then(utils.syncronize(Station, 'Stations'))
+    .then(utils.sync(Playlist, 'Playlists'))
+    .then(utils.sync(Podcast, 'Podcasts'))
+    .then(utils.sync(Station, 'Stations'))
     .catch(logger.error);
 };
-
-module.exports = { update };
