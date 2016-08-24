@@ -1,5 +1,5 @@
 module.exports = {
   mongo: {
-    uri: 'mongodb://localhost/throwcast',
+    uri: process.env.MONGO_URL || 'mongodb://localhost/throwcast',
   },
 };
