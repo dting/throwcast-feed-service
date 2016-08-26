@@ -12,6 +12,14 @@ const feeds = [
   'http://podcasts.cstv.com/feeds/fantasyfootball.xml',
   'http://podcasts.cstv.com/feeds/nba.xml',
   'http://feeds.99percentinvisible.org/99percentinvisible',
+  'https://fivejs.codeschool.com/feed.rss',
+  'https://feeds.feedwrench.com/AdventuresInAngular.rss',
+  'http://feeds.feedburner.com/boagworldpodcast',
+  'http://shoptalkshow.com/feed/podcast',
+  'https://feeds.feedwrench.com/JavaScriptJabber.rss',
+  'http://feeds.feedburner.com/NodeUp',
+  'http://feeds.5by5.tv/webahead',
+  'http://feeds.feedburner.com/dancarlin/history',
 ];
 
 const opts = {
