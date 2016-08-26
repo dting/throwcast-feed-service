@@ -5,7 +5,7 @@ const feed = require('./feed');
 const seed = require('./seed');
 const utils = require('./utils');
 
-const CRON_TIME = '0 */15 * * * *';
+const CRON_TIME = '0 0 * * * *';
 
 db.connect()
   .then(() => {
